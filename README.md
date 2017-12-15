@@ -41,10 +41,10 @@ How to use
 
 Links
 -----
-DCC++ https://github.com/DccPlusPlus
-ESP8266 Core https://github.com/esp8266/Arduino
-JMRI WiFi Throttle Communications Protocol http://jmri.sourceforge.net/help/en/package/jmri/jmrit/withrottle/Protocol.shtml
-WiThrottle official site http://www.withrottle.com/WiThrottle/Home.html
-Download WiThrottle on the AppStore https://itunes.apple.com/us/app/withrottle-lite/id344190130
-Engine Driver official site https://enginedriver.mstevetodd.com/
-Download Engine Driver on the GooglePlay https://play.google.com/store/apps/details?id=jmri.enginedriver
+DCC++ https://github.com/DccPlusPlus<br />
+ESP8266 Core https://github.com/esp8266/Arduino<br />
+JMRI WiFi Throttle Communications Protocol http://jmri.sourceforge.net/help/en/package/jmri/jmrit/withrottle/Protocol.shtml<br />
+WiThrottle official site http://www.withrottle.com/WiThrottle/Home.html<br />
+Download WiThrottle on the AppStore https://itunes.apple.com/us/app/withrottle-lite/id344190130<br />
+Engine Driver official site https://enginedriver.mstevetodd.com/<br /><br />
+Download Engine Driver on the GooglePlay https://play.google.com/store/apps/details?id=jmri.enginedriver<br />
