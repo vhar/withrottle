@@ -42,7 +42,6 @@
  */
 
 /* Create a WiFi access point. */
-
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
@@ -82,7 +81,6 @@ void setup() {
   delay(1500);
   Serial.begin(115200);
   Serial.flush();
-
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAPConfig(WTServer_Ip, WTServer_Ip, WTServer_NMask);
   WiFi.softAP(ssid, password);
@@ -112,7 +110,6 @@ void loop() {
     }
     if (client[i].available()) {
       String Data = client[i].readString();
-      Serial.println(Data);
       start = -1;
       last = Data.lastIndexOf('\n');
       String changeSpeed[]={"","","","","",""};
