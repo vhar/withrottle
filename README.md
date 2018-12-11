@@ -48,3 +48,14 @@ WiThrottle official site http://www.withrottle.com/WiThrottle/Home.html<br />
 Download WiThrottle on the AppStore https://itunes.apple.com/us/app/withrottle-lite/id344190130<br />
 Engine Driver official site https://enginedriver.mstevetodd.com/<br /><br />
 Download Engine Driver on the GooglePlay https://play.google.com/store/apps/details?id=jmri.enginedriver<br />
+
+Change log
+----------
+* 2017-09-10
+Fixed release responce for WiThrottle.app
+Fixed synchronize power status on clients
+* 2017-09-24
+Added mDNS responder
+Added start delay to fix connection problem with DCC++
+* 2018-12-11
+Fixed Engine Driver v2.19+ throttle numbers 

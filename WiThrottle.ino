@@ -1,13 +1,14 @@
 /*
  * Truncated JMRI WiThrottle server implementation for DCC++ command station
- * Software version 1.02b
- * Copyright (c) 2016-2017, Valerie Valley RR https://sites.google.com/site/valerievalleyrr/
+ * Software version 1.03b
+ * Copyright (c) 2016-2018, Valerie Valley RR https://sites.google.com/site/valerievalleyrr/
  * 
  * Change log:
  * 2017-09-10 - Fixed release responce for WiThrottle.app
  *              Fixed synchronize power status on clients
  * 2017-09-24 - Added mDNS responder
  *              Added start delay to fix connection problem with DCC++
+ * 2018-12-11 - Fixed Engine Driver v2.19+ throttle numbers 
  * 
  * DCC++ https://github.com/DccPlusPlus
  * ESP8266 Core https://github.com/esp8266/Arduino
@@ -41,6 +42,7 @@
  */
 
 /* Create a WiFi access point. */
+
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
@@ -71,7 +73,6 @@ char commandString[maxCommandLenght+1];
 boolean alreadyConnected[maxClient];
 String powerStatus;
 char msg[16];
-int status = WL_IDLE_STATUS;
 
 /* Define WiThrottle Server */
 WiFiServer server(WTServer_Port);
@@ -81,7 +82,8 @@ void setup() {
   delay(1500);
   Serial.begin(115200);
   Serial.flush();
-  WiFi.mode(WIFI_AP);
+
+  WiFi.mode(WIFI_AP_STA);
   WiFi.softAPConfig(WTServer_Ip, WTServer_Ip, WTServer_NMask);
   WiFi.softAP(ssid, password);
 
@@ -110,6 +112,7 @@ void loop() {
     }
     if (client[i].available()) {
       String Data = client[i].readString();
+      Serial.println(Data);
       start = -1;
       last = Data.lastIndexOf('\n');
       String changeSpeed[]={"","","","","",""};
@@ -138,9 +141,9 @@ void loop() {
         else if (clientData.startsWith("N") || clientData.startsWith("*")){
           client[i].println("*" + String(heartbeatTimeout));
         }
-        else if (clientData.startsWith("MT") || clientData.startsWith("MS")) {
+        else if (clientData.startsWith("MT") || clientData.startsWith("MS") || clientData.startsWith("M0") || clientData.startsWith("M1")) {
           String th = clientData.substring(1,2);
-          if (th == "T")
+          if (th == "T" || th == "0")
             Throttle = 0+i*2;
           else
             Throttle = 1+i*2;
