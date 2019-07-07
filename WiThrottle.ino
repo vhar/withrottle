@@ -90,9 +90,9 @@ void setup() {
   server.begin();
   MDNS.addService("withrottle","tcp", WTServer_Port);
   if (PowerOnStart == 1)
-    turnPowerOn();
+    turnPower('1');
   else
-    turnPowerOff();
+    turnPower('0');
 }
 
 void loop() {
@@ -118,8 +118,7 @@ void loop() {
           heartbeatEnable[i] = true;
         }
         else if (clientData.startsWith("PPA")){
-          powerStatus = clientData.substring(3);
-          Serial.println("<"+powerStatus+">");
+          turnPower(clientData.charAt(3));
           client[i].println("PPA"+powerStatus);
           for(int p=0; p<maxClient; p++){
             if (alreadyConnected[p]){
@@ -173,7 +172,7 @@ void loop() {
         if(changeSpeed[Throttle]!="" && LocoThrottle[Throttle]!=""){
           String locoAddress=LocoThrottle[Throttle].substring(1);
           fKey=LocoState[Throttle][29];
-          Serial.print("<t "+String(Throttle+1)+" "+locoAddress+"  "+String(fKey)+" "+String(LocoState[Throttle][30])+">");
+          sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+"  "+String(fKey)+" "+String(LocoState[Throttle][30]));
           String response = loadResponse();
         }
       }
@@ -184,43 +183,41 @@ void loop() {
   }
 }
 
-int invert(int value){
-  if(value == 0)
-    return 1;
-  else
-    return 0;
+
+int invert(int value) {
+  return value == 0 ? 1 : 0;
 }
 
-void turnPowerOn() {
-  powerStatus = "1";
-  while (Serial.available() <= 0) {
-    Serial.println("<1>");
-    delay(300);
-  }
-  char c;
-  while(Serial.available()>0)
-  {
-    c=Serial.read();
-  }
+void drain() {
+  String v = "";
+  while(Serial.available()>0) v += (char)Serial.read();
+
 }
 
-void turnPowerOff() {
-  powerStatus = "0";
-  while (Serial.available() <= 0) {
-    Serial.println("<0>");
-    delay(300);
-  }
-  char c;
-  while(Serial.available()>0)
-  {
-    c=Serial.read();
-  }
+void waitForDCCpp() {
+  while (Serial.available() <= 0) delay(25);
 }
+
+void sendDCCpp(String v) {
+	Serial.println(v);
+}
+
+void sendDCCppCmd(String v) {
+	sendDCCpp("<"+v+">");
+}
+
+void turnPower(char v) {
+  powerStatus = v;
+  while (Serial.available() <= 0) {
+    sendDCCppCmd(String(v));
+    delay(25);
+  }
+  drain();
+}
+
 
 String loadResponse() {
-  while (Serial.available() <= 0) {
-    delay(300);
-  }
+  waitForDCCpp();
   char c;
   while(Serial.available()>0) {
     c=Serial.read();
@@ -234,12 +231,9 @@ String loadResponse() {
 }
 
 void loadTurnouts() {
-  Serial.write("<T>");
+  sendDCCppCmd("T");
+  waitForDCCpp();
   char c;
-  while (Serial.available() <= 0)
-  {
-    delay(300);
-  }
   int t=0;
   while(Serial.available()>0)
   {
@@ -276,7 +270,7 @@ void loadTurnouts() {
 void throttleStart(int i) {
   client[i].flush();
   client[i].setTimeout(500);
-  Serial.println("\nNew client");
+  sendDCCpp("\nNew client");
   client[i].println("VN2.0");
   client[i].println("RL0");
   client[i].println("PPA"+powerStatus);
@@ -292,7 +286,7 @@ void throttleStart(int i) {
 
 void throttleStop(int i) {
   client[i].stop();
-  Serial.println("\n");
+  sendDCCpp("\nClient lost");
   alreadyConnected[i] = false;
   heartbeatEnable[i] = false;
   LocoState[0+i*2][29] = 0;
@@ -319,7 +313,7 @@ void locoRelease(String th, String actionKey, int i) {
   String locoAddress = LocoThrottle[Throttle].substring(1);
   heartbeat[Throttle] =0;
   LocoThrottle[Throttle] = "";
-  Serial.print("<t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30])+">");
+  sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30]));
   String response = loadResponse();
   client[i].println("M"+th+"-"+actionKey+"<;>");
 
@@ -343,21 +337,21 @@ void locoAction(String th, String actionKey, String actionVal, int i){
       case 3:
       case 4:
         func = 128+LocoState[Throttle][1]*1+LocoState[Throttle][2]*2+LocoState[Throttle][3]*4+LocoState[Throttle][4]*8+LocoState[Throttle][0]*16;
-        Serial.println("<f "+locoAddress+" "+String(func)+">");
+        sendDCCppCmd("f "+locoAddress+" "+String(func));
       break;
       case 5:
       case 6:
       case 7:
       case 8:
         func = 176+LocoState[Throttle][5]*1+LocoState[Throttle][6]*2+LocoState[Throttle][7]*4+LocoState[Throttle][8]*8;
-        Serial.println("<f "+locoAddress+" "+String(func)+">");
+        sendDCCppCmd("f "+locoAddress+" "+String(func));
       break;
       case 9:
       case 10:
       case 11:
       case 12:
         func = 160+LocoState[Throttle][9]*1+LocoState[Throttle][10]*2+LocoState[Throttle][11]*4+LocoState[Throttle][12]*8;
-        Serial.println("<f "+locoAddress+" "+String(func)+">");
+        sendDCCppCmd("f "+locoAddress+" "+String(func));
       break;
       case 13:
       case 14:
@@ -368,7 +362,7 @@ void locoAction(String th, String actionKey, String actionVal, int i){
       case 19:
       case 20:
         func = LocoState[Throttle][13]*1+LocoState[Throttle][14]*2+LocoState[Throttle][15]*4+LocoState[Throttle][16]*8+LocoState[Throttle][17]*16+LocoState[Throttle][18]*32+LocoState[Throttle][19]*64+LocoState[Throttle][20]*128;
-        Serial.println("<f "+locoAddress+" "+String(222)+" "+String(func)+">");
+        sendDCCppCmd("f "+locoAddress+" "+String(222)+" "+String(func));
       break;
       case 21:
       case 22:
@@ -379,7 +373,7 @@ void locoAction(String th, String actionKey, String actionVal, int i){
       case 27:
       case 28:
         func = LocoState[Throttle][21]*1+LocoState[Throttle][22]*2+LocoState[Throttle][23]*4+LocoState[Throttle][24]*8+LocoState[Throttle][25]*16+LocoState[Throttle][26]*32+LocoState[Throttle][27]*64+LocoState[Throttle][28]*128;
-        Serial.println("<f "+locoAddress+" "+String(223)+" "+String(func)+">");
+        sendDCCppCmd("f "+locoAddress+" "+String(223)+" "+String(func));
       break;
     }
   }
@@ -389,7 +383,7 @@ void locoAction(String th, String actionKey, String actionVal, int i){
   else if(actionVal.startsWith("V")){
     fKey = actionVal.substring(1).toInt();
     LocoState[Throttle][29] = fKey;
-    Serial.print("<t "+String(Throttle+1)+" "+locoAddress+"  "+String(fKey)+" "+String(LocoState[Throttle][30])+">");
+    sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+"  "+String(fKey)+" "+String(LocoState[Throttle][30]));
     response = loadResponse();
   }
   else if(actionVal.startsWith("qR")){
@@ -398,22 +392,22 @@ void locoAction(String th, String actionKey, String actionVal, int i){
   else if(actionVal.startsWith("R")){
     fKey = actionVal.substring(1).toInt();
     LocoState[Throttle][30] = fKey;
-    Serial.print("<t "+String(Throttle+1)+" "+locoAddress+" "+String(LocoState[Throttle][29])+"  "+String(fKey)+">");
+    sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+" "+String(LocoState[Throttle][29])+"  "+String(fKey));
     response = loadResponse();
   }
   else if(actionVal.startsWith("X")){
     LocoState[Throttle][29] = 0;
-    Serial.print("<t "+String(Throttle+1)+" "+locoAddress+" -1 "+String(LocoState[Throttle][30])+">");
+    sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+" -1 "+String(LocoState[Throttle][30]));
     response = loadResponse();
   }
   else if(actionVal.startsWith("I")){
     LocoState[Throttle][29] = 0;
-    Serial.print("<t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30])+">");
+    sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30]));
     response = loadResponse();
   }
   else if(actionVal.startsWith("Q")){
     LocoState[Throttle][29] = 0;
-    Serial.print("<t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30])+">");
+    sendDCCppCmd("t "+String(Throttle+1)+" "+locoAddress+" 0 "+String(LocoState[Throttle][30]));
     response = loadResponse();
   }
 }
@@ -447,7 +441,7 @@ void accessoryToggle(int aAddr, String aStatus){
     for(int i=0; i<maxClient; i++){
       client[i].println("PTA2LT"+String(aAddr));
     }
-    Serial.print("<a "+String(addr)+" "+String(sub)+" "+String(newStat)+">");
+    sendDCCppCmd("a "+String(addr)+" "+String(sub)+" "+String(newStat));
   }
   else {
     if(newStat==-1){
@@ -475,7 +469,7 @@ void accessoryToggle(int aAddr, String aStatus){
     for(int i=0; i<maxClient; i++){
       client[i].println("PTA"+String(tt[t].tStatus)+"LT"+String(tt[t].address));
     }
-    Serial.print("<T "+String(tt[t].id)+" "+String(newStat)+">");
+    sendDCCppCmd("T "+String(tt[t].id)+" "+String(newStat));
     String response = loadResponse();
   }
 }
