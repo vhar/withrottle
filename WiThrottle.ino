@@ -45,8 +45,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
+
 #include "Config.h"
-#define maxCommandLenght 30
+#define maxCommandLength 30
 
 /* Define turnout object structures */
 typedef struct {
@@ -68,7 +69,7 @@ int Throttle =0;
 int start;
 int finish;
 int last;
-char commandString[maxCommandLenght+1];
+char commandString[maxCommandLength+1];
 boolean alreadyConnected[maxClient];
 String powerStatus;
 char msg[16];
@@ -95,12 +96,13 @@ void setup() {
 }
 
 void loop() {
-  for(int i=0; i<maxClient; i++){
-    if (!client[i]) {
-      client[i] = server.available();
+  for(int i=0; i<maxClient; i++) {
+    WiFiClient& cli = client[i];
+    if (!cli) {
+      cli = server.available();
     }
     else {
-      if (client[i].status() == CLOSED) {
+      if (cli.status() == CLOSED) {
         throttleStop(i);
       }
       else if(!alreadyConnected[i]) {
@@ -108,15 +110,10 @@ void loop() {
         throttleStart(i);
       }
     }
-    if (client[i].available()) {
-      String Data = client[i].readString();
-      start = -1;
-      last = Data.lastIndexOf('\n');
+    if (cli.available()) {
       String changeSpeed[]={"","","","","",""};
-      while(start < last){
-        finish = Data.indexOf('\n', start+1);
-        String clientData = Data.substring(start+1, finish);
-        start = finish;
+      while(cli.available()>0) { 
+        String clientData = cli.readStringUntil('\n'); 
         if (clientData.startsWith("*+")) {
           heartbeatEnable[i] = true;
         }
@@ -135,10 +132,14 @@ void loop() {
           int aAddr = clientData.substring(6).toInt();
           accessoryToggle(aAddr, aStatus);
         }
-        else if (clientData.startsWith("N") || clientData.startsWith("*")){
+        else if (clientData.startsWith("N") 
+              || clientData.startsWith("*")){
           client[i].println("*" + String(heartbeatTimeout));
         }
-        else if (clientData.startsWith("MT") || clientData.startsWith("MS") || clientData.startsWith("M0") || clientData.startsWith("M1")) {
+        else if (clientData.startsWith("MT") 
+              || clientData.startsWith("MS") 
+              || clientData.startsWith("M0") 
+              || clientData.startsWith("M1")) {
           String th = clientData.substring(1,2);
           if (th == "T" || th == "0")
             Throttle = 0+i*2;
@@ -227,7 +228,7 @@ String loadResponse() {
       sprintf(commandString,"");
     else if(c=='>')
       return (char*)commandString;
-    else if(strlen(commandString)<maxCommandLenght)
+    else if(strlen(commandString)<maxCommandLength)
       sprintf(commandString,"%s%c",commandString,c);
   }
 }
@@ -267,7 +268,7 @@ void loadTurnouts() {
       tt[t]={a,id,z};
       t++;
     }
-    else if(strlen(commandString)<maxCommandLenght)
+    else if(strlen(commandString)<maxCommandLength)
       sprintf(commandString,"%s%c",commandString,c);
   }
 }
